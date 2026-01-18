@@ -1,0 +1,34 @@
+{
+  "songs": [
+    {
+      "id": 1,
+      "title": "4Raws",
+      "artist": "esDeeKid",
+      "album": "Idunno",
+      "imageUrl": "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=100&h=100&fit=crop",
+      "duration": 143,
+      "currentTime": 0,
+      "audioUrl": "/src/assets/4Raws.mp3"
+    },
+    {
+      "id": 2,
+      "title": "It's Been So Long",
+      "artist": "Living TombStone",
+      "album": "",
+      "imageUrl": "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=100&h=100&fit=crop",
+      "duration": 200,
+      "currentTime": 0,
+      "audioUrl": "gk-aCL6eyGc"
+    },
+    {
+      "id": 3,
+      "title": "Kids",
+      "artist": "MGMT",
+      "album": "Oracular Spectacular",
+      "imageUrl": "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop",
+      "duration": 310,
+      "currentTime": 0,
+      "audioUrl": "/audio/kids.mp3"
+    }
+  ]
+}
