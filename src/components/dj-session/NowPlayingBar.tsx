@@ -10,6 +10,7 @@ interface Song {
   artist: string;
   album: string;
   duration: number;
+  artwork: string;
   currentTime: number;
 }
 
@@ -32,7 +33,7 @@ const NowPlayingBar = ({
 }: NowPlayingBarProps) => {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
+    const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
@@ -44,10 +45,15 @@ const NowPlayingBar = ({
         {/* Album Art */}
         {/* src={song.imageUrl} */}
         <motion.img
+          src={song.artwork ?? "/images/default-cover.png"}
           alt={song.album}
           className="w-16 h-16 rounded-lg object-cover shadow-neon"
           animate={{ rotate: isPlaying ? 360 : 0 }}
-          transition={{ duration: 4, repeat: isPlaying ? Infinity : 0, ease: "linear" }}
+          transition={{
+            duration: 4,
+            repeat: isPlaying ? Infinity : 0,
+            ease: "linear",
+          }}
         />
 
         {/* Song Info */}

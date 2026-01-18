@@ -4,8 +4,11 @@ import SessionClock from "@/components/dj-session/SessionClock";
 import ActivitySelector from "@/components/dj-session/ActivitySelector";
 import ImageCarousel from "@/components/dj-session/ImageCarousel";
 import NowPlayingBar from "@/components/dj-session/NowPlayingBar";
-import AudioPlayer from "@/components/dj-session/audioplayer";
-import { audioLibrary } from "@/lib/audioLibrary";
+
+import  AudioPlayer from "@/components/dj-session/audioplayer"
+import { audioLibrary, Folder, Track } from "@/lib/audioLibrary";
+import { Console, time } from "console";
+import { findBestTrackMatch } from "@/lib/audioHelpers";
 
 type VitalsPayload = {
   ok?: boolean;
@@ -19,6 +22,9 @@ type VitalsPayload = {
 };
 
 const BASE = "http://localhost:5050";
+
+
+
 
 function decideGenre(v: VitalsPayload): "calm" | "fun" | "steady" | null {
   if (!v || v.valid !== true) return null;
@@ -51,6 +57,10 @@ const DJSession = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const currentTrack = folder.tracks[currentIndex];
 
+  const [currentTime, setCurrentTime] = useState(0);
+  const [lastCheck, setLastCheck] = useState(0);
+  const [duration, setDuration] = useState(0);
+
   // Autoplay gating
   const [hasInteracted, setHasInteracted] = useState(false);
 
@@ -69,6 +79,24 @@ const DJSession = () => {
   const [currentGenre, setCurrentGenre] = useState<"steady" | "calm" | "fun">("steady");
 
   const pollRef = useRef<number | null>(null);
+
+  function maybeChangeSong(targetBpm: number) {
+    const nextTrack = findBestTrackMatch(targetBpm, "LocalTest");
+    if (!nextTrack) return;
+
+    if (nextTrack.id === currentTrack.id) return;
+
+    const nextIndex = folder.tracks.findIndex(
+      (t) => t.id === nextTrack.id
+
+
+    );
+
+    if (nextIndex === -1) return;
+
+    setCurrentIndex(nextIndex);
+    setIsPlaying(true);
+}
 
   const startDJ = async () => {
     setHasInteracted(true); // allow autoplay
@@ -93,6 +121,18 @@ const DJSession = () => {
       console.error("stopVitals failed", e);
     }
   };
+
+  useEffect(() => {
+  if (!isPlaying) return;
+
+  // Only trigger every 30s boundary
+  const currentCheckpoint = Math.floor(currentTime / 30) * 30;
+
+  if (currentCheckpoint !== lastCheck) {
+    maybeChangeSong(vitals.avgPulse)
+  }
+}, [currentTime, isPlaying]);
+
 
   useEffect(() => {
     if (!djRunning) {
@@ -135,6 +175,7 @@ const DJSession = () => {
     };
   }, [djRunning, lastEpoch, currentGenre, folder.tracks.length]);
 
+  
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Effects (IMPORTANT: pointer-events-none so they don't block clicks) */}
@@ -261,43 +302,76 @@ const DJSession = () => {
 
         {/* Audio */}
         <AudioPlayer
-          src={currentTrack.src}
-          isPlaying={isPlaying}
-          autoPlayAfterInteract={hasInteracted}
-          onProgress={(time, duration) => {
-            // If your NowPlayingBar needs these, store in state here.
-          }}
-          onEnded={() => {
-            setCurrentIndex((i) => (i + 1) % folder.tracks.length);
-          }}
-        />
+              src={currentTrack.src}
+              isPlaying={isPlaying}
+              onProgress={(time, duration) => {
+                  setCurrentTime(time);
+                  setDuration(duration || 0);
+              }}
 
-        {/* Now Playing Bar */}
+              onEnded={() => {
+                setCurrentIndex((i) => (i + 1) % folder.tracks.length);
+              }}
+            />
+
+         {/* Now Playing Bar */}
+            <AudioPlayer
+              src={currentTrack.src}
+              isPlaying={isPlaying}
+              onProgress={(time, duration) => {
+                  setCurrentTime(time);
+                  setDuration(duration || 0);
+              }}
+
+              onEnded={() => {
+                setCurrentIndex((i) => (i + 1) % folder.tracks.length);
+              }}
+            />
+
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.6 }}
         >
-          <NowPlayingBar
-            song={{
-              title: currentTrack.title,
-              artist: currentTrack.artist,
-              album: "Temporary",
-              duration: 0,
-              currentTime: 0,
-            }}
-            isPlaying={isPlaying}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-            onNext={() => setCurrentIndex((i) => (i + 1) % folder.tracks.length)}
-            onPrev={() =>
-              setCurrentIndex((i) => (i === 0 ? folder.tracks.length - 1 : i - 1))
-            }
-          />
+          <NowPlayingBar song={{
+          title: currentTrack.title,
+          artist: currentTrack.artist,
+          album: currentTrack.album,
+          duration: currentTrack.duration,
+          artwork: currentTrack.artwork,
+          currentTime: currentTime,
+        }} 
+          isPlaying={isPlaying}
+          onPlay={()=>setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+       onNext={() => {
+  const nextTrack = findBestTrackMatch(150, "LocalTest");
+  if (!nextTrack) return;
+
+  const nextIndex = folder.tracks.findIndex(
+    (track) => track.id === nextTrack.id
+  );
+
+  if (nextIndex !== -1) {
+    setCurrentIndex(nextIndex);
+    setIsPlaying(true);
+  }
+}}
+
+          onPrev={() =>
+            setCurrentIndex((i) =>
+              i === 0 ? folder.tracks.length - 1 : i - 1
+            )
+          }
+        />
         </motion.div>
+
+        
       </div>
     </div>
   );
 };
+
+
 
 export default DJSession;

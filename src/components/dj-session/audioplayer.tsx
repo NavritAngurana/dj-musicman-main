@@ -19,15 +19,21 @@ export default function AudioPlayer({
     if (!audioRef.current) return;
     if (isPlaying) audioRef.current.play();
     else audioRef.current.pause();
-  }, [isPlaying]);
+  }, [src, isPlaying]);
 
   return (
     <audio
       ref={audioRef}
       src={src}
-      onTimeUpdate={() =>
-        onProgress(audioRef.current!.currentTime, audioRef.current!.duration)
+      onTimeUpdate={(e) => {
+        const el = e.currentTarget;
+        onProgress?.(el.currentTime, el.duration);
+        }
       }
+      onLoadedMetadata={(e) => {
+        const el = e.currentTarget;
+        onProgress?.(el.currentTime, el.duration);
+    }}
       onEnded={onEnded}
     />
   );
